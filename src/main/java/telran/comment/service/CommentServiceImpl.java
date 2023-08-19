@@ -13,6 +13,7 @@ import telran.comment.dto.CommentDto;
 import telran.comment.dto.CreateEditCommentDto;
 import telran.comment.dto.accounting.ActivityDto;
 import telran.comment.dto.accounting.ProfileDto;
+import telran.comment.dto.problem.ProblemDto;
 import telran.comment.model.Comment;
 
 import java.util.NoSuchElementException;
@@ -32,13 +33,17 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto addComment(String problemId, CreateEditCommentDto details) {
         Comment comment = modelMapper.map(details, Comment.class);
         ProfileDto profile = kafkaConsumer.getProfile();
-        comment.setAuthor(profile.getUsername());
-        comment.setAuthorId(profile.getEmail());
-        commentRepository.save(comment);
-        profile.addActivity(comment.getId(), new ActivityDto(comment.getType(), false, false));
-        editProfile(profile);
-        kafkaProducer.setCommentIdToProblem(problemId + "," + comment.getId());
-        return modelMapper.map(comment, CommentDto.class);
+        ProblemDto problem = kafkaConsumer.getProblem();
+        if (problem.getId().equals(problemId)) {
+            comment.setAuthor(profile.getUsername());
+            comment.setAuthorId(profile.getEmail());
+            commentRepository.save(comment);
+            profile.addActivity(comment.getId(), new ActivityDto(comment.getType(), false, false));
+            editProfile(profile);
+            kafkaProducer.setCommentIdToProblem(problemId + "," + comment.getId());
+            kafkaProducer.sendUpdatedProfile();
+            return modelMapper.map(comment, CommentDto.class);
+        } else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "Wrong problem in address");
     }
 
     @Override
@@ -89,7 +94,7 @@ public class CommentServiceImpl implements CommentService {
             comment.setDetails(details.getDetails());
             commentRepository.save(comment);
             return modelMapper.map(comment, CommentDto.class);
-        }else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "You are not author of that comment");
+        } else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "You are not author of that comment");
     }
 
     @Override
@@ -102,7 +107,7 @@ public class CommentServiceImpl implements CommentService {
             editProfile(profile);
             commentRepository.delete(comment);
             return modelMapper.map(comment, CommentDto.class);
-        }else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "You are not author of that comment");
+        } else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "You are not author of that comment");
     }
 
     @Override
