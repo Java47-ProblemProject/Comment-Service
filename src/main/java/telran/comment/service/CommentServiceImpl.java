@@ -47,6 +47,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public Boolean addLike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
@@ -67,6 +68,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public Boolean addDislike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
@@ -87,6 +89,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public CommentDto editComment(String problemId, String commentId, CreateEditCommentDto details) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
@@ -98,6 +101,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public CommentDto deleteComment(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
@@ -111,12 +115,14 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDto getComment(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         return modelMapper.map(comment, CommentDto.class);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Set<CommentDto> getComments(String problemId) {
         return commentRepository.findAll().stream().map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
     }
