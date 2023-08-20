@@ -9,7 +9,7 @@ import telran.comment.service.CommentService;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/problem")
+@RequestMapping("/comment")
 @RequiredArgsConstructor
 public class CommentController {
     final CommentService commentService;

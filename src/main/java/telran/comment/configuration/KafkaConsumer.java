@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.annotation.Transactional;
 import telran.comment.dto.accounting.ProfileDto;
 import telran.comment.dto.problem.ProblemDto;
 
@@ -17,17 +18,17 @@ public class KafkaConsumer {
     ProblemDto problem;
 
     @Bean
+    @Transactional
     protected Consumer<ProfileDto> receiveProfile() {
         return data -> {
-            System.out.println("recieved profile : " + profile);
             this.profile = data;
         };
     }
 
     @Bean
+    @Transactional
     protected Consumer<ProblemDto> receiveProblem() {
         return data -> {
-            System.out.println("Problem : " + data);
             this.problem = data;
         };
     }
