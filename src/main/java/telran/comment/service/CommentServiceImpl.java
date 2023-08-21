@@ -37,7 +37,11 @@ public class CommentServiceImpl implements CommentService {
         if (problem.getId().equals(problemId)) {
             comment.setAuthor(profile.getUsername());
             comment.setAuthorId(profile.getEmail());
+            comment.setProblemId(problem.getId());
             commentRepository.save(comment);
+            if (!profile.getActivities().containsKey(problemId)) {
+                profile.addActivity(problem.getId(), new ActivityDto(problem.getType(), false, false));
+            }
             profile.addActivity(comment.getId(), new ActivityDto(comment.getType(), false, false));
             editProfile(profile);
             kafkaProducer.setCommentIdToProblem(problemId + "," + comment.getId());
@@ -51,6 +55,8 @@ public class CommentServiceImpl implements CommentService {
     public Boolean addLike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
+        ProblemDto problem = kafkaConsumer.getProblem();
+        checkProblemInActivities(profile, problem);
         ActivityDto activity = profile.getActivities().computeIfAbsent(commentId, a -> new ActivityDto(comment.getType(), false, false));
         if (!activity.getLiked()) {
             activity.setLiked(true);
@@ -72,6 +78,8 @@ public class CommentServiceImpl implements CommentService {
     public Boolean addDislike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
+        ProblemDto problem = kafkaConsumer.getProblem();
+        checkProblemInActivities(profile, problem);
         ActivityDto activity = profile.getActivities().computeIfAbsent(commentId, a -> new ActivityDto(comment.getType(), false, false));
         if (!activity.getDisliked()) {
             activity.setDisliked(true);
@@ -130,5 +138,11 @@ public class CommentServiceImpl implements CommentService {
     private void editProfile(ProfileDto profile) {
         kafkaConsumer.setProfile(profile);
         kafkaProducer.setProfile(profile);
+    }
+
+    private void checkProblemInActivities(ProfileDto profile, ProblemDto problem) {
+        if (!profile.getActivities().containsKey(problem.getId())) {
+            profile.addActivity(problem.getId(), new ActivityDto(problem.getType(), false, false));
+        }
     }
 }

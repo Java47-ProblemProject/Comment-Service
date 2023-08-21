@@ -19,6 +19,8 @@ public class Comment {
     @Setter
     protected String authorId;
     @Setter
+    protected String problemId;
+    @Setter
     protected String details;
     protected LocalDateTime dateCreated;
     protected Reactions reactions;

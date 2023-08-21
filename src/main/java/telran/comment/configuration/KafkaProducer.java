@@ -17,12 +17,14 @@ public class KafkaProducer {
     private ProfileDto profile;
     @Setter
     private String commentIdToProblem;
+    @Setter
+    private String commentIdToDelete;
 
     @Bean
     public Supplier<ProfileDto> sendUpdatedProfile() {
         return () -> {
             if (profile != null) {
-                streamBridge.send("sendUpdatedProfile-out-0", profile);
+                //streamBridge.send("sendUpdatedProfile-out-0", profile);
                 ProfileDto sentMessage = profile;
                 profile = null;
                 return sentMessage;
@@ -35,9 +37,22 @@ public class KafkaProducer {
     public Supplier<String> sendCommentIdToProblem() {
         return () -> {
             if (commentIdToProblem != null) {
-                streamBridge.send("sendCommentIdToProblem-out-0", commentIdToProblem);
+                //streamBridge.send("sendCommentIdToProblem-out-0", commentIdToProblem);
                 String sentMessage = commentIdToProblem;
                 commentIdToProblem = null;
+                return sentMessage;
+            }
+            return null;
+        };
+    }
+
+    @Bean
+    public Supplier<String> sendCommentIdToDelete() {
+        return () -> {
+            if (commentIdToDelete != null) {
+                //streamBridge.send("sendCommentIdToDelete-out-0", commentIdToDelete);
+                String sentMessage = commentIdToDelete;
+                commentIdToDelete = null;
                 return sentMessage;
             }
             return null;
