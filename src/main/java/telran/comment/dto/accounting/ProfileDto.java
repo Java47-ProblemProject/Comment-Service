@@ -32,13 +32,4 @@ public class ProfileDto {
     public void removeActivity(String id) {
         this.activities.remove(id);
     }
-
-    public void addFormulatedProblem(){
-        this.stats.setFormulatedProblems(this.stats.getFormulatedProblems()+1);
-    }
-
-    public void removeFormulatedProblem(){
-        this.stats.setFormulatedProblems(this.stats.getFormulatedProblems()-1);
-    }
-
 }

@@ -71,8 +71,6 @@ public class KafkaConsumer {
     @Bean
     @Transactional
     protected Consumer<String> receiveAuthorToRemove() {
-        return data -> {
-            commentCustomRepository.deleteCommentsByAuthorId(data);
-        };
+        return commentCustomRepository::deleteCommentsByAuthorId;
     }
 }

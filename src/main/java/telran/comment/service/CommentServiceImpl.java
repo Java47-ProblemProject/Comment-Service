@@ -69,8 +69,16 @@ public class CommentServiceImpl implements CommentService {
             profile.addActivity(commentId, activity);
             editProfile(profile);
             return true;
+        } else {
+            activity.setLiked(false);
+            comment.getReactions().removeLike();
+            commentRepository.save(comment);
+            if (!profile.getEmail().equals(comment.getAuthorId())) {
+                profile.removeActivity(commentId);
+            } else profile.addActivity(commentId, activity);
+            editProfile(profile);
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -92,8 +100,16 @@ public class CommentServiceImpl implements CommentService {
             profile.addActivity(commentId, activity);
             editProfile(profile);
             return true;
+        } else {
+            activity.setDisliked(false);
+            comment.getReactions().removeDislike();
+            commentRepository.save(comment);
+            if (!profile.getEmail().equals(comment.getAuthorId())) {
+                profile.removeActivity(commentId);
+            } else profile.addActivity(commentId, activity);
+            editProfile(profile);
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -113,9 +129,17 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto deleteComment(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
+        ProblemDto problem = kafkaConsumer.getProblem();
         if (comment.getAuthorId().equals(profile.getEmail())) {
             profile.removeActivity(commentId);
-            //kafkaProducer.setCommentIdToDelete(commentId);   // Here should be sent to remove it from everyone
+            if (profile.getActivities().containsKey(problemId)
+                    && !profile.getActivities().get(problemId).getLiked()
+                    && !profile.getActivities().get(problemId).getDisliked()
+                    && !profile.getEmail().equals(problem.getAuthorId())) {
+                profile.removeActivity(problemId);
+            }
+            kafkaProducer.setCommentIdDelete(problemId + "," + comment.getId());
+            problem.getComments().remove(commentId);
             editProfile(profile);
             commentRepository.delete(comment);
             return modelMapper.map(comment, CommentDto.class);

@@ -34,8 +34,8 @@ public class CommentController {
         return commentService.editComment(problemId, commentId, details);
     }
 
-    @DeleteMapping("/deletecomment/{problemId}/{commentId}")
-    public CommentDto deleteComment(@PathVariable String problemId, @PathVariable String commentId) {
+    @DeleteMapping("/deletecomment/{profileId}/{problemId}/{commentId}")
+    public CommentDto deleteComment(@PathVariable String profileId, @PathVariable String problemId, @PathVariable String commentId) {
         return commentService.deleteComment(problemId, commentId);
     }
     @GetMapping("/getcomment/{problemId}/{commentId}")
