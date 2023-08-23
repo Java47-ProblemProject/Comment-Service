@@ -11,9 +11,9 @@ import telran.comment.configuration.KafkaProducer;
 import telran.comment.dao.CommentRepository;
 import telran.comment.dto.CommentDto;
 import telran.comment.dto.CreateEditCommentDto;
-import telran.comment.dto.accounting.ActivityDto;
 import telran.comment.dto.accounting.ProfileDto;
-import telran.comment.dto.problem.ProblemDto;
+import telran.comment.dto.kafkaData.CommentServiceDataDto;
+import telran.comment.dto.kafkaData.ProblemServiceDataDto;
 import telran.comment.model.Comment;
 
 import java.util.NoSuchElementException;
@@ -33,19 +33,14 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto addComment(String problemId, CreateEditCommentDto details) {
         Comment comment = modelMapper.map(details, Comment.class);
         ProfileDto profile = kafkaConsumer.getProfile();
-        ProblemDto problem = kafkaConsumer.getProblem();
-        if (problem.getId().equals(problemId)) {
+        ProblemServiceDataDto problemData = kafkaConsumer.getProblemData();
+        if (problemData.getProblemId().equals(problemId)) {
             comment.setAuthor(profile.getUsername());
             comment.setAuthorId(profile.getEmail());
-            comment.setProblemId(problem.getId());
+            comment.setProblemId(problemData.getProblemId());
             commentRepository.save(comment);
-            if (!profile.getActivities().containsKey(problemId)) {
-                profile.addActivity(problem.getId(), new ActivityDto(problem.getType(), false, false));
-            }
-            profile.addActivity(comment.getId(), new ActivityDto(comment.getType(), false, false));
-            editProfile(profile);
-            kafkaProducer.setCommentIdToProblem(problemId + "," + comment.getId());
-            kafkaProducer.sendUpdatedProfile();
+            CommentServiceDataDto data = new CommentServiceDataDto(profile.getEmail(), problemData.getProblemId(), comment.getId(), "addComment");
+            kafkaProducer.setCommentData(data);
             return modelMapper.map(comment, CommentDto.class);
         } else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "Wrong problem in address");
     }
@@ -55,61 +50,74 @@ public class CommentServiceImpl implements CommentService {
     public Boolean addLike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
-        ProblemDto problem = kafkaConsumer.getProblem();
-        checkProblemInActivities(profile, problem);
-        ActivityDto activity = profile.getActivities().computeIfAbsent(commentId, a -> new ActivityDto(comment.getType(), false, false));
-        if (!activity.getLiked()) {
-            activity.setLiked(true);
-            if (activity.getDisliked()) {
-                activity.setDisliked(false);
-                comment.getReactions().removeDislike();
-            }
+        ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
+        CommentServiceDataDto data;
+        boolean hasActivity = profile.getActivities().containsKey(commentId);
+        if (!hasActivity) {
             comment.getReactions().addLike();
             commentRepository.save(comment);
-            profile.addActivity(commentId, activity);
-            editProfile(profile);
+            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "addLike");
+            kafkaProducer.setCommentData(data);
+            return true;
+        }
+        boolean liked = profile.getActivities().get(commentId).getLiked();
+        boolean disliked = profile.getActivities().get(commentId).getDisliked();
+        if (!liked) {
+            comment.getReactions().addLike();
+            if (disliked) {
+                comment.getReactions().removeDislike();
+            }
+            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "addLike");
+            kafkaProducer.setCommentData(data);
+            commentRepository.save(comment);
             return true;
         } else {
-            activity.setLiked(false);
             comment.getReactions().removeLike();
+            data = problem.getSubscribers().contains(profile.getEmail())
+                    ? addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "removeLike")
+                    : addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "removeLikeRemoveActivities");
+            kafkaProducer.setCommentData(data);
             commentRepository.save(comment);
-            if (!profile.getEmail().equals(comment.getAuthorId())) {
-                profile.removeActivity(commentId);
-            } else profile.addActivity(commentId, activity);
-            editProfile(profile);
-            return false;
         }
+        return false;
     }
+
 
     @Override
     @Transactional
     public Boolean addDislike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
-        ProblemDto problem = kafkaConsumer.getProblem();
-        checkProblemInActivities(profile, problem);
-        ActivityDto activity = profile.getActivities().computeIfAbsent(commentId, a -> new ActivityDto(comment.getType(), false, false));
-        if (!activity.getDisliked()) {
-            activity.setDisliked(true);
-            if (activity.getLiked()) {
-                activity.setLiked(false);
-                comment.getReactions().removeLike();
-            }
+        ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
+        CommentServiceDataDto data;
+        boolean hasActivity = profile.getActivities().containsKey(commentId);
+        if (!hasActivity) {
             comment.getReactions().addDislike();
             commentRepository.save(comment);
-            profile.addActivity(commentId, activity);
-            editProfile(profile);
+            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "addDislike");
+            kafkaProducer.setCommentData(data);
+            return true;
+        }
+        boolean liked = profile.getActivities().get(commentId).getLiked();
+        boolean disliked = profile.getActivities().get(commentId).getDisliked();
+        if (!liked) {
+            comment.getReactions().addDislike();
+            if (disliked) {
+                comment.getReactions().removeDislike();
+            }
+            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "addDislike");
+            kafkaProducer.setCommentData(data);
+            commentRepository.save(comment);
             return true;
         } else {
-            activity.setDisliked(false);
             comment.getReactions().removeDislike();
+            data = problem.getSubscribers().contains(profile.getEmail())
+                    ? addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "removeDislike")
+                    : addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, "removeDislikeRemoveActivities");
+            kafkaProducer.setCommentData(data);
             commentRepository.save(comment);
-            if (!profile.getEmail().equals(comment.getAuthorId())) {
-                profile.removeActivity(commentId);
-            } else profile.addActivity(commentId, activity);
-            editProfile(profile);
-            return false;
         }
+        return false;
     }
 
     @Override
@@ -129,18 +137,13 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto deleteComment(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
         ProfileDto profile = kafkaConsumer.getProfile();
-        ProblemDto problem = kafkaConsumer.getProblem();
+        ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
         if (comment.getAuthorId().equals(profile.getEmail())) {
-            profile.removeActivity(commentId);
-            if (profile.getActivities().containsKey(problemId)
-                    && !profile.getActivities().get(problemId).getLiked()
-                    && !profile.getActivities().get(problemId).getDisliked()
-                    && !profile.getEmail().equals(problem.getAuthorId())) {
-                profile.removeActivity(problemId);
+            CommentServiceDataDto data = new CommentServiceDataDto(profile.getEmail(), problem.getProblemId(), comment.getId(), "deleteComment");
+            if (problem.getSubscribers().contains(profile.getEmail())) {
+                data = new CommentServiceDataDto(profile.getEmail(), problem.getProblemId(), comment.getId(), "deleteCommentAndProblem");
             }
-            kafkaProducer.setCommentIdDelete(problemId + "," + comment.getId());
-            problem.getComments().remove(commentId);
-            editProfile(profile);
+            kafkaProducer.setCommentData(data);
             commentRepository.delete(comment);
             return modelMapper.map(comment, CommentDto.class);
         } else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "You are not author of that comment");
@@ -159,14 +162,7 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findAll().stream().map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
     }
 
-    private void editProfile(ProfileDto profile) {
-        kafkaConsumer.setProfile(profile);
-        kafkaProducer.setProfile(profile);
-    }
-
-    private void checkProblemInActivities(ProfileDto profile, ProblemDto problem) {
-        if (!profile.getActivities().containsKey(problem.getId())) {
-            profile.addActivity(problem.getId(), new ActivityDto(problem.getType(), false, false));
-        }
+    private CommentServiceDataDto addDataToTransfer(String profileId, String problemId, String commentId, String methodName) {
+        return new CommentServiceDataDto(profileId, problemId, commentId, methodName);
     }
 }

@@ -31,12 +31,4 @@ public class Comment {
         this.reactions = new Reactions(0, 0);
         this.type = "COMMENT";
     }
-
-    public void setReactionsLike(){
-        this.reactions.setLikes(this.reactions.getLikes()+1);
-    }
-
-    public void setReactionsDislike(){
-        this.reactions.setDislikes(this.reactions.getDislikes()+1);
-    }
 }

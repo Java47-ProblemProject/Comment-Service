@@ -9,8 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import telran.comment.dao.CommentCustomRepository;
 import telran.comment.dao.CommentRepository;
 import telran.comment.dto.accounting.ProfileDto;
-import telran.comment.dto.problem.ProblemDto;
+import telran.comment.dto.kafkaData.ProblemServiceDataDto;
 
+import java.util.Set;
 import java.util.function.Consumer;
 
 @Getter
@@ -22,55 +23,39 @@ public class KafkaConsumer {
     final KafkaProducer kafkaProducer;
     @Setter
     ProfileDto profile;
-    @Setter
-    ProblemDto problem;
+    ProblemServiceDataDto problemData;
 
     @Bean
     @Transactional
     protected Consumer<ProfileDto> receiveProfile() {
         return data -> {
-            this.profile = data;
+            if (data.getUsername().equals("DELETED_PROFILE")) {
+                //profile was deleted ->
+                commentCustomRepository.deleteCommentsByAuthorId(data.getEmail());
+                this.profile = new ProfileDto();
+            } else if (this.profile != null && data.getEmail().equals(profile.getEmail()) && !data.getUsername().equals(profile.getUsername())) {
+                commentCustomRepository.changeAuthorName(data.getEmail(), data.getUsername());
+                this.profile = data;
+            } else this.profile = data;
         };
     }
 
     @Bean
     @Transactional
-    protected Consumer<ProfileDto> receiveUpdatedProfile() {
+    protected Consumer<ProblemServiceDataDto> receiveDataFromProblem() {
         return data -> {
-            this.profile = data;
+            String profileId = data.getProfileId();
+            String problemId = data.getProblemId();
+            String method = data.getMethodName();
+            Set<String> comments = data.getComments();
+            Set<String> solutions = data.getSolutions();
+            Set<String> subscribers = data.getSubscribers();
+            if (method.equals("deleteProblem")) {
+                commentCustomRepository.deleteCommentsByProblemId(problemId);
+                this.problemData = new ProblemServiceDataDto();
+            } else {
+                this.problemData = data;
+            }
         };
-    }
-
-    @Bean
-    @Transactional
-    protected Consumer<ProblemDto> receiveProblem() {
-        return data -> {
-            this.problem = data;
-        };
-    }
-
-    @Bean
-    @Transactional
-    protected Consumer<ProblemDto> receiveCommentIdToDelete() {
-        return data -> {
-            String problemId = data.getId();
-            commentCustomRepository.deleteCommentsByProblemId(problemId);
-        };
-    }
-
-    @Bean
-    @Transactional
-    protected Consumer<String> receiveNewName() {
-        return data ->{
-            String authorId = data.split(",")[0];
-            String newName = data.split(",")[1];
-            commentCustomRepository.changeAuthorName(authorId, newName);
-        };
-    }
-
-    @Bean
-    @Transactional
-    protected Consumer<String> receiveAuthorToRemove() {
-        return commentCustomRepository::deleteCommentsByAuthorId;
     }
 }
