@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import telran.comment.configuration.KafkaConsumer;
 import telran.comment.dao.CommentRepository;
 import telran.comment.dto.accounting.ProfileDto;
-import telran.comment.dto.kafkaData.ProblemServiceDataDto;
+import telran.comment.dto.kafkaData.ProblemDataDto.ProblemServiceDataDto;
 import telran.comment.model.Comment;
 
 import java.util.NoSuchElementException;

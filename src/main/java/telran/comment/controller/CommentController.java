@@ -29,8 +29,8 @@ public class CommentController {
         return commentService.addDislike(problemId, commentId);
     }
 
-    @PutMapping("/editcoment/{problemId}/{commentId}")
-    public CommentDto editComment(@PathVariable String problemId, @PathVariable String commentId, @RequestBody CreateEditCommentDto details) {
+    @PutMapping("/editcoment/{profileId}/{problemId}/{commentId}")
+    public CommentDto editComment(@PathVariable String profileId, @PathVariable String problemId, @PathVariable String commentId, @RequestBody CreateEditCommentDto details) {
         return commentService.editComment(problemId, commentId, details);
     }
 
@@ -38,12 +38,19 @@ public class CommentController {
     public CommentDto deleteComment(@PathVariable String profileId, @PathVariable String problemId, @PathVariable String commentId) {
         return commentService.deleteComment(problemId, commentId);
     }
+
     @GetMapping("/getcomment/{problemId}/{commentId}")
     public CommentDto getComment(@PathVariable String problemId, @PathVariable String commentId) {
         return commentService.getComment(problemId, commentId);
     }
-    @GetMapping("/{problemId}/getcomments")
+
+    @GetMapping("/getcomments/{problemId}")
     public Set<CommentDto> getComments(@PathVariable String problemId) {
         return commentService.getComments(problemId);
+    }
+
+    @GetMapping("/getautorcomments/{profileId}")
+    public Set<CommentDto> getCommentsByProfileId(@PathVariable String profileId) {
+        return commentService.getCommentsByProfileId(profileId);
     }
 }

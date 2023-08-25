@@ -13,4 +13,6 @@ public interface CommentService {
     CommentDto deleteComment(String problemId, String commentId);
     CommentDto getComment(String problemId, String commentId);
     Set<CommentDto> getComments(String problemId);
+
+    Set<CommentDto> getCommentsByProfileId(String profileId);
 }

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
-import telran.comment.dto.kafkaData.CommentServiceDataDto;
+import telran.comment.dto.kafkaData.commentDataDto.CommentServiceDataDto;
 
 import java.util.function.Supplier;
 
