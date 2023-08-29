@@ -34,14 +34,13 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto addComment(String problemId, CreateEditCommentDto details) {
         Comment comment = modelMapper.map(details, Comment.class);
         ProfileDto profile = kafkaConsumer.getProfile();
-        ProblemServiceDataDto problemData = kafkaConsumer.getProblemData();
-        if (problemData.getProblemId().equals(problemId)) {
+        ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
+        if (problem.getProblemId().equals(problemId)) {
             comment.setAuthor(profile.getUsername());
             comment.setAuthorId(profile.getEmail());
-            comment.setProblemId(problemData.getProblemId());
+            comment.setProblemId(problem.getProblemId());
             commentRepository.save(comment);
-            CommentServiceDataDto data = new CommentServiceDataDto(profile.getEmail(), problemData.getProblemId(), comment.getId(), CommentMethodName.ADD_COMMENT);
-            System.out.println("PROBLEM DATA SENT");
+            CommentServiceDataDto data = addDataToTransfer(profile, problem, comment, CommentMethodName.ADD_COMMENT);
             kafkaProducer.setCommentData(data);
             return modelMapper.map(comment, CommentDto.class);
         } else throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "Wrong problem in address");
@@ -58,7 +57,7 @@ public class CommentServiceImpl implements CommentService {
         if (!hasActivity) {
             comment.getReactions().addLike();
             commentRepository.save(comment);
-            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.ADD_LIKE);
+            data = addDataToTransfer(profile, problem, comment, CommentMethodName.ADD_LIKE);
             kafkaProducer.setCommentData(data);
             return true;
         }
@@ -69,7 +68,7 @@ public class CommentServiceImpl implements CommentService {
             if (disliked) {
                 comment.getReactions().removeDislike();
             }
-            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.ADD_LIKE);
+            data = addDataToTransfer(profile, problem, comment, CommentMethodName.ADD_LIKE);
             kafkaProducer.setCommentData(data);
             commentRepository.save(comment);
             return true;
@@ -78,14 +77,11 @@ public class CommentServiceImpl implements CommentService {
             boolean isAuthorProblem = problem.getProblemAuthorId().equals(profile.getEmail());
             boolean isAuthorComment = comment.getAuthorId().equals(profile.getEmail());
             if (isAuthorComment) {
-                data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.REMOVE_LIKE);
-                System.out.println(data.getMethodName());
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.REMOVE_LIKE);
             } else if (isAuthorProblem || isSubscriber) {
-                data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.REMOVE_LIKE_REMOVE_COMMENT_ACTIVITY);
-                System.out.println(data.getMethodName());
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.REMOVE_LIKE_REMOVE_COMMENT_ACTIVITY);
             } else {
-                data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.REMOVE_LIKE_REMOVE_ALL_ACTIVITIES);
-                System.out.println(data.getMethodName());
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.REMOVE_LIKE_REMOVE_ALL_ACTIVITIES);
             }
             kafkaProducer.setCommentData(data);
             comment.getReactions().removeLike();
@@ -106,7 +102,7 @@ public class CommentServiceImpl implements CommentService {
         if (!hasActivity) {
             comment.getReactions().addDislike();
             commentRepository.save(comment);
-            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.ADD_DISLIKE);
+            data = addDataToTransfer(profile, problem, comment, CommentMethodName.ADD_DISLIKE);
             kafkaProducer.setCommentData(data);
             return true;
         }
@@ -117,7 +113,7 @@ public class CommentServiceImpl implements CommentService {
             if (liked) {
                 comment.getReactions().removeLike();
             }
-            data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.ADD_DISLIKE);
+            data = addDataToTransfer(profile, problem, comment, CommentMethodName.ADD_DISLIKE);
             kafkaProducer.setCommentData(data);
             commentRepository.save(comment);
             return true;
@@ -126,14 +122,11 @@ public class CommentServiceImpl implements CommentService {
             boolean isAuthorProblem = problem.getProblemAuthorId().equals(profile.getEmail());
             boolean isAuthorComment = comment.getAuthorId().equals(profile.getEmail());
             if (isAuthorComment) {
-                data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.REMOVE_DISLIKE);
-                System.out.println(data.getMethodName());
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.REMOVE_DISLIKE);
             } else if (isAuthorProblem || isSubscriber) {
-                data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.REMOVE_DISLIKE_REMOVE_COMMENT_ACTIVITY);
-                System.out.println(data.getMethodName());
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.REMOVE_DISLIKE_REMOVE_COMMENT_ACTIVITY);
             } else {
-                data = addDataToTransfer(profile.getEmail(), problem.getProblemId(), commentId, CommentMethodName.REMOVE_DISLIKE_REMOVE_ALL_ACTIVITIES);
-                System.out.println(data.getMethodName());
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.REMOVE_DISLIKE_REMOVE_ALL_ACTIVITIES);
             }
             kafkaProducer.setCommentData(data);
             comment.getReactions().removeLike();
@@ -161,9 +154,9 @@ public class CommentServiceImpl implements CommentService {
         ProfileDto profile = kafkaConsumer.getProfile();
         ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
         if (comment.getAuthorId().equals(profile.getEmail())) {
-            CommentServiceDataDto data = new CommentServiceDataDto(profile.getEmail(), problem.getProblemId(), comment.getId(), CommentMethodName.DELETE_COMMENT);
+            CommentServiceDataDto data = addDataToTransfer(profile, problem, comment, CommentMethodName.DELETE_COMMENT);
             if (problem.getSubscribers().contains(profile.getEmail())) {
-                data = new CommentServiceDataDto(profile.getEmail(), problem.getProblemId(), comment.getId(), CommentMethodName.DELETE_COMMENT_AND_PROBLEM);
+                data = addDataToTransfer(profile, problem, comment, CommentMethodName.DELETE_COMMENT_AND_PROBLEM);
             }
             kafkaProducer.setCommentData(data);
             commentRepository.delete(comment);
@@ -189,7 +182,7 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findAllByAuthorId(profileId).map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
     }
 
-    private CommentServiceDataDto addDataToTransfer(String profileId, String problemId, String commentId, CommentMethodName methodName) {
-        return new CommentServiceDataDto(profileId, problemId, commentId, methodName);
+    private CommentServiceDataDto addDataToTransfer(ProfileDto profile, ProblemServiceDataDto problem, Comment comment, CommentMethodName methodName) {
+        return new CommentServiceDataDto(profile.getEmail(), problem.getProblemId(), problem.getProblemRating(), comment.getId(), methodName);
     }
 }
