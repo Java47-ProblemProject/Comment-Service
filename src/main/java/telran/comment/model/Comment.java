@@ -28,7 +28,7 @@ public class Comment {
 
     public Comment() {
         this.dateCreated = LocalDateTime.now();
-        this.reactions = new Reactions(0, 0);
+        this.reactions = new Reactions();
         this.type = "COMMENT";
     }
 }

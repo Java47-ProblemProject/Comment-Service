@@ -4,27 +4,55 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Getter
-@Setter
 @AllArgsConstructor
 public class Reactions {
-    protected Integer likes;
-    protected Integer dislikes;
+    protected Integer totalLikes;
+    protected Integer totalDislikes;
+    protected Set<ProfileDetails> likes;
+    protected Set<ProfileDetails> dislikes;
 
-    public void addLike() {
-        this.likes++;
+    public Reactions() {
+        this.totalLikes = 0;
+        this.totalDislikes = 0;
+        this.likes = new HashSet<>();
+        this.dislikes = new HashSet<>();;
     }
 
-    public void addDislike() {
-        this.dislikes++;
+    public boolean setLike(String profileId, Double profileRating) {
+        ProfileDetails profileDetails = new ProfileDetails(profileId, profileRating);
+        if (this.likes.contains(profileDetails)) {
+            this.likes.remove(profileDetails);
+            this.totalLikes--;
+            return false;
+        } else {
+            if (this.dislikes.contains(profileDetails)) {
+                this.dislikes.remove(profileDetails);
+                this.totalDislikes--;
+            }
+            this.likes.add(profileDetails);
+            this.totalLikes++;
+            return true;
+        }
     }
 
-    public void removeLike() {
-        this.likes--;
+    public boolean setDislike(String profileId, Double profileRating) {
+        ProfileDetails profileDetails = new ProfileDetails(profileId, profileRating);
+        if (this.dislikes.contains(profileDetails)) {
+            this.dislikes.remove(profileDetails);
+            this.totalDislikes--;
+            return false;
+        } else {
+            if (this.likes.contains(profileDetails)) {
+                this.likes.remove(profileDetails);
+                this.totalLikes--;
+            }
+            this.dislikes.add(profileDetails);
+            this.totalDislikes++;
+            return true;
+        }
     }
-
-    public void removeDislike() {
-        this.dislikes--;
-    }
-
 }

@@ -12,8 +12,10 @@ import telran.comment.dto.accounting.ProfileDto;
 import telran.comment.dto.kafkaData.ProblemDataDto.ProblemMethodName;
 import telran.comment.dto.kafkaData.ProblemDataDto.ProblemServiceDataDto;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Getter
 @Configuration
@@ -33,6 +35,10 @@ public class KafkaConsumer {
             if (data.getUsername().equals("DELETED_PROFILE")) {
                 //profile was deleted ->
                 commentCustomRepository.deleteCommentsByAuthorId(data.getEmail());
+                data.getActivities().entrySet().stream()
+                        .filter(entry -> "PROBLEM".equals(entry.getValue().getType()) && entry.getValue().getAction().contains("AUTHOR"))
+                        .map(Map.Entry::getKey)
+                        .forEach(commentCustomRepository::deleteCommentsByProblemId);
                 this.profile = new ProfileDto();
             } else if (this.profile != null && data.getEmail().equals(profile.getEmail()) && !data.getUsername().equals(profile.getUsername())) {
                 commentCustomRepository.changeAuthorName(data.getEmail(), data.getUsername());

@@ -1,6 +1,7 @@
 package telran.comment.dto;
 
 import lombok.Getter;
+import telran.comment.model.Reactions;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +13,6 @@ public class CommentDto {
     protected String problemId;
     protected String details;
     protected LocalDateTime dateCreated;
-    protected ReactionsDto reactions;
+    protected Reactions reactions;
     protected String type;
 }

@@ -1,11 +1,14 @@
 package telran.comment.dto.accounting;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Map;
 import java.util.Set;
 
 @Getter
+@ToString
 public class ProfileDto {
     protected String username;
     protected String email;

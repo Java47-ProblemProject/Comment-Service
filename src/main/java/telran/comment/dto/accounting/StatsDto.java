@@ -13,5 +13,5 @@ public class StatsDto {
     protected Integer checkedSolutions;
     @Setter
     protected Integer formulatedProblems;
-    protected Integer rating;
+    protected Double rating;
 }

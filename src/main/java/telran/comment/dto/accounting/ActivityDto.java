@@ -1,15 +1,13 @@
 package telran.comment.dto.accounting;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
-@AllArgsConstructor
+import lombok.Getter;
+
+import java.util.Set;
+
 @Getter
 public class ActivityDto {
-    @Setter
     protected String type;
-    @Setter
-    protected Boolean liked;
-    @Setter
-    protected Boolean disliked;
+    protected String problemId;
+    protected Double rating;
+    protected Set<String> action;
 }
