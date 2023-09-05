@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.Date;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +33,16 @@ public class JwtTokenService {
             return EmailEncryptionConfiguration.decryptAndDecodeUserId(encryptedEmail);
         } catch (Exception ex) {
             return null;
+        }
+    }
+
+    public Set<String> extractRolesFromToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder().setSigningKey(jwtSecret).build().parseClaimsJws(token).getBody();
+            String[] roles = claims.get("roles").toString().replace("[", "").replace("]", "").trim().split(",");
+            return new HashSet<>(Arrays.asList(roles));
+        } catch (Exception ex) {
+            return Collections.emptySet();
         }
     }
 
