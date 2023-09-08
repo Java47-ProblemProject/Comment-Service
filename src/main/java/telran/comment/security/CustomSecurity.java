@@ -1,16 +1,16 @@
 package telran.comment.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import telran.comment.configuration.KafkaConsumer;
+import org.springframework.stereotype.Component;
+import telran.comment.kafka.KafkaConsumer;
 import telran.comment.dao.CommentRepository;
-import telran.comment.dto.accounting.ProfileDto;
-import telran.comment.dto.kafkaData.ProblemDataDto.ProblemServiceDataDto;
+import telran.comment.kafka.accounting.ProfileDto;
+import telran.comment.kafka.kafkaDataDto.ProblemDataDto.ProblemServiceDataDto;
 import telran.comment.model.Comment;
 
 import java.util.NoSuchElementException;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class CustomSecurity {
     final KafkaConsumer kafkaConsumer;

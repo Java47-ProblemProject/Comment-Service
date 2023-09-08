@@ -1,4 +1,4 @@
-package telran.comment.dto.kafkaData.commentDataDto;
+package telran.comment.kafka.kafkaDataDto.commentDataDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -11,6 +11,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/comment")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://127.0.0.1:5173/", allowedHeaders = "*")
 public class CommentController {
     final CommentService commentService;
 

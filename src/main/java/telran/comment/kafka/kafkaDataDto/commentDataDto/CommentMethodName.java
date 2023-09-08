@@ -1,4 +1,4 @@
-package telran.comment.dto.kafkaData.commentDataDto;
+package telran.comment.kafka.kafkaDataDto.commentDataDto;
 
 public enum CommentMethodName {
     ADD_COMMENT,

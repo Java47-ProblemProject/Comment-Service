@@ -1,7 +1,6 @@
-package telran.comment.dto.accounting;
+package telran.comment.kafka.accounting;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Map;

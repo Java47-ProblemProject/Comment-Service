@@ -1,4 +1,4 @@
-package telran.comment.dto.accounting;
+package telran.comment.kafka.accounting;
 
 
 import lombok.AllArgsConstructor;
