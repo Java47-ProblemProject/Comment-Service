@@ -16,9 +16,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import telran.comment.kafka.KafkaConsumer;
-import telran.comment.kafka.accounting.ProfileDto;
 import telran.comment.dto.exception.ExceptionDto;
+import telran.comment.kafka.KafkaConsumer;
+import telran.comment.kafka.profileDataDto.ProfileDataDto;
 
 import java.io.IOException;
 import java.util.Set;
@@ -39,7 +39,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
         String token = header.substring(7);
-        ProfileDto profile;
+        ProfileDataDto profile;
         try {
             profile = kafkaConsumer.getProfile();
             String email = jwtTokenService.extractEmailFromToken(token);
