@@ -9,4 +9,5 @@ import java.util.stream.Stream;
 public interface CommentRepository extends MongoRepository<Comment, String> {
 
     Stream<Comment> findAllByAuthorId(String profileId);
+    Stream<Comment> findAllByProblemId(String problemId);
 }

@@ -101,7 +101,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public Set<CommentDto> getComments(String problemId) {
-        return commentRepository.findAll().stream().map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
+        return commentRepository.findAllByProblemId(problemId).map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
     }
 
     @Override

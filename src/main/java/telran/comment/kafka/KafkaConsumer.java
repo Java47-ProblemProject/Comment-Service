@@ -37,22 +37,17 @@ public class KafkaConsumer {
                 jwtTokenService.setCurrentProfileToken(data.getEmail(), data.getToken());
                 this.profile = data;
                 this.profile.setToken("");
-            }
-            if (methodName.equals(ProfileMethodName.UNSET_PROFILE)) {
+            } else if (methodName.equals(ProfileMethodName.UNSET_PROFILE)) {
                 jwtTokenService.deleteCurrentProfileToken(email);
                 this.profile = null;
-            }
-            if (methodName.equals(ProfileMethodName.UPDATED_PROFILE)){
+            } else if (methodName.equals(ProfileMethodName.UPDATED_PROFILE)) {
                 this.profile = data;
-            }
-            if (methodName.equals(ProfileMethodName.EDIT_PROFILE_NAME)) {
+            } else if (methodName.equals(ProfileMethodName.EDIT_PROFILE_NAME)) {
                 commentCustomRepository.changeAuthorName(email, userName);
                 this.profile.setUserName(data.getUserName());
-            }
-            if (methodName.equals(ProfileMethodName.EDIT_PROFILE_EDUCATION)) {
+            } else if (methodName.equals(ProfileMethodName.EDIT_PROFILE_EDUCATION)) {
                 //problemCustomRepository.setNewProfileRating(rating);
-            }
-            if (methodName.equals(ProfileMethodName.DELETE_PROFILE)) {
+            } else if (methodName.equals(ProfileMethodName.DELETE_PROFILE)) {
                 jwtTokenService.deleteCurrentProfileToken(email);
                 commentCustomRepository.deleteCommentsByAuthorId(email);
                 this.profile = null;
