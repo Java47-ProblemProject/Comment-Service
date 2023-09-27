@@ -41,9 +41,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String token = header.substring(7);
         ProfileDataDto profile;
         try {
-            profile = kafkaConsumer.getProfile();
             String email = jwtTokenService.extractEmailFromToken(token);
             String encryptedEmail = EmailEncryptionConfiguration.encryptAndEncodeUserId(email);
+            profile = kafkaConsumer.getProfiles().get(encryptedEmail);
             if (!jwtTokenService.validateToken(token)) {
                 ExceptionDto exceptionDto = new ExceptionDto(HttpStatus.UNAUTHORIZED.value(), "Unauthorized", request);
                 exceptionDto.setMessage("Authentication failed. Please provide a valid authentication token.");

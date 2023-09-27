@@ -1,6 +1,7 @@
 package telran.comment.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import telran.comment.dao.CommentRepository;
 import telran.comment.kafka.KafkaConsumer;
@@ -18,7 +19,7 @@ public class CustomSecurity {
 
     public boolean checkCommentAuthorAndProblemId(String problemId, String commentId, String authorId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
-        ProfileDataDto profile = kafkaConsumer.getProfile();
+        ProfileDataDto profile = kafkaConsumer.getProfiles().get(SecurityContextHolder.getContext().getAuthentication().getName());
         ProblemServiceDataDto problemData = kafkaConsumer.getProblemData();
         return authorId.equals(profile.getEmail()) && authorId.equals(comment.getAuthorId()) && problemId.equals(problemData.getProblemId());
     }

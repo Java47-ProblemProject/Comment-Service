@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 @Document(collection = "Comments")
 @Getter
@@ -27,7 +29,8 @@ public class Comment {
     protected String type;
 
     public Comment() {
-        this.dateCreated = LocalDateTime.now();
+        ZoneId jerusalemZone = ZoneId.of("Asia/Jerusalem");
+        this.dateCreated = LocalDateTime.now(ZoneOffset.UTC).atZone(jerusalemZone).toLocalDateTime();
         this.reactions = new Reactions();
         this.type = "COMMENT";
     }

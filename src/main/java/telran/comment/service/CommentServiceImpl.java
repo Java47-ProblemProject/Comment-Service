@@ -2,21 +2,21 @@ package telran.comment.service;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
-import telran.comment.kafka.KafkaConsumer;
-import telran.comment.kafka.KafkaProducer;
 import telran.comment.dao.CommentRepository;
 import telran.comment.dto.CommentDto;
 import telran.comment.dto.CreateEditCommentDto;
+import telran.comment.kafka.KafkaConsumer;
+import telran.comment.kafka.KafkaProducer;
+import telran.comment.kafka.kafkaDataDto.ProblemDataDto.ProblemServiceDataDto;
 import telran.comment.kafka.kafkaDataDto.commentDataDto.CommentMethodName;
 import telran.comment.kafka.kafkaDataDto.commentDataDto.CommentServiceDataDto;
-import telran.comment.kafka.kafkaDataDto.ProblemDataDto.ProblemServiceDataDto;
 import telran.comment.kafka.profileDataDto.ProfileDataDto;
 import telran.comment.model.Comment;
 
+import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,7 +33,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentDto addComment(String problemId, CreateEditCommentDto details) {
         Comment comment = modelMapper.map(details, Comment.class);
-        ProfileDataDto profile = kafkaConsumer.getProfile();
+        ProfileDataDto profile = kafkaConsumer.getProfiles().get(SecurityContextHolder.getContext().getAuthentication().getName());
         ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
         comment.setAuthor(profile.getUserName());
         comment.setAuthorId(profile.getEmail());
@@ -48,7 +48,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public Boolean addLike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
-        ProfileDataDto profile = kafkaConsumer.getProfile();
+        ProfileDataDto profile = kafkaConsumer.getProfiles().get(SecurityContextHolder.getContext().getAuthentication().getName());
         Double profileRating = profile.getRating();
         ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
         boolean result = comment.getReactions().setLike(profile.getEmail(), profileRating);
@@ -61,7 +61,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public Boolean addDislike(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
-        ProfileDataDto profile = kafkaConsumer.getProfile();
+        ProfileDataDto profile = kafkaConsumer.getProfiles().get(SecurityContextHolder.getContext().getAuthentication().getName());
         Double profileRating = profile.getRating();
         ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
         boolean result = comment.getReactions().setDislike(profile.getEmail(), profileRating);
@@ -83,7 +83,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentDto deleteComment(String problemId, String commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(NoSuchElementException::new);
-        ProfileDataDto profile = kafkaConsumer.getProfile();
+        ProfileDataDto profile = kafkaConsumer.getProfiles().get(SecurityContextHolder.getContext().getAuthentication().getName());
         ProblemServiceDataDto problem = kafkaConsumer.getProblemData();
         transferData(profile, problem, comment, CommentMethodName.DELETE_COMMENT);
         commentRepository.delete(comment);
@@ -101,12 +101,12 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public Set<CommentDto> getComments(String problemId) {
-        return commentRepository.findAllByProblemId(problemId).map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
+        return commentRepository.findAllByProblemIdOrderByDateCreatedDesc(problemId).map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
     public Set<CommentDto> getCommentsByProfileId(String profileId) {
-        return commentRepository.findAllByAuthorId(profileId).map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toSet());
+        return commentRepository.findAllByAuthorIdOrderByDateCreatedDesc(profileId).map(e -> modelMapper.map(e, CommentDto.class)).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private void transferData(ProfileDataDto profile, ProblemServiceDataDto problem, Comment comment, CommentMethodName methodName) {
